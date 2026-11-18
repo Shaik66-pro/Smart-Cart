@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .success-box {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            padding: 3rem;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            background: var(--success-light);
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
+        }
+        .tracking-pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 2.5rem 0;
+            position: relative;
+        }
+        .tracking-pipeline::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: var(--border);
+            z-index: 1;
+        }
+        .tracking-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tracking-node {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--text-subtle);
+            transition: all var(--transition-fast);
+        }
+        .tracking-step.active .tracking-node {
+            border-color: var(--success);
+            background: var(--success);
+            color: #fff;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+        }
+        .tracking-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .tracking-step.active .tracking-label {
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link active">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ session.get('user_name', 'U')[0]|upper }}
+                    </div>
+                    <span>{{ session.get('user_name', 'Customer') }}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+
+        <div class="success-box">
+            <!-- Animated Checkmark -->
+            <div class="success-checkmark">
+                <i class="fa-solid fa-check"></i>
+            </div>
+
+            <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.4rem 1rem; margin-bottom: 0.75rem;">
+                Payment Authorized & Verified
+            </span>
+            <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Order Successfully Placed!</h1>
+            <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 540px; margin: 0 auto;">
+                Thank you for shopping with <strong>SmartCart</strong>. Your order is confirmed and our dispatch team has initiated preparation.
+            </p>
+
+            <!-- Order Tracking Pipeline -->
+            <div class="tracking-pipeline">
+                <div class="tracking-step active">
+                    <div class="tracking-node"><i class="fa-solid fa-check"></i></div>
+                    <span class="tracking-label">Confirmed</span>
+                </div>
+                <div class="tracking-step active">
+                    <div class="tracking-node"><i class="fa-solid fa-box"></i></div>
+                    <span class="tracking-label">Processing</span>
+                </div>
+                <div class="tracking-step">
+                    <div class="tracking-node"><i class="fa-solid fa-truck-fast"></i></div>
+                    <span class="tracking-label">Shipped</span>
+                </div>
+                <div class="tracking-step">
+                    <div class="tracking-node"><i class="fa-solid fa-house-chimney"></i></div>
+                    <span class="tracking-label">Delivered</span>
+                </div>
+            </div>
+
+            <!-- Order Metadata Details -->
+            <div style="background: var(--bg-alt); border-radius: var(--radius-lg); padding: 1.5rem; margin: 2rem 0; border: 1px solid var(--border); text-align: left; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">ORDER NUMBER</span>
+                    <div style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--primary);">#{{ order.order_id }}</div>
+                </div>
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">PAYMENT REFERENCE</span>
+                    <div style="font-family: monospace; font-size: 0.95rem; font-weight: 600; color: var(--text-main);">{{ order.razorpay_payment_id or 'rzp_test_pay' }}</div>
+                </div>
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">DATE & TIME</span>
+                    <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">{{ order.created_at }}</div>
+                </div>
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOTAL AMOUNT PAID</span>
+                    <div style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--success);">₹{{ order.amount }}</div>
+                </div>
+            </div>
+
+            <!-- Itemized Products List -->
+            <div style="text-align: left; margin-bottom: 2.5rem;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Items In This Order</h3>
+                <div class="table-card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th style="text-align: center;">Quantity</th>
+                                <th style="text-align: right;">Unit Price</th>
+                                <th style="text-align: right;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td style="font-weight: 600; color: var(--text-main);">{{ item.product_name }}</td>
+                                <td style="text-align: center;">{{ item.quantity }}</td>
+                                <td style="text-align: right;">₹{{ item.price }}</td>
+                                <td style="text-align: right; font-weight: 700; color: var(--text-main);">₹{{ item.price * item.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background: var(--bg-alt); font-weight: 800;">
+                                <td colspan="3" style="text-align: right; font-size: 1rem;">Grand Total Paid:</td>
+                                <td style="text-align: right; font-size: 1.15rem; color: var(--primary);">₹{{ order.amount }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/user/download-invoice/{{ order.order_id }}" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-file-pdf"></i> Download Official Tax Invoice (PDF)
+                </a>
+                <a href="/user/my-orders" class="btn btn-secondary btn-lg">
+                    <i class="fa-solid fa-list-check"></i> View My Orders
+                </a>
+                <a href="/user/products" class="btn btn-outline btn-lg">
+                    <i class="fa-solid fa-bag-shopping"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Order #{{ order.order_id }} Confirmed</span>
+        </div>
+    </footer>
+
+</body>
+</html>

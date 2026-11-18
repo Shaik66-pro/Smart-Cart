@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Catalog - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .toast-notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            background: #0f172a;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-normal);
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <!-- Search Form -->
+            <div class="nav-search">
+                <form method="GET" action="/user/products">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="search" placeholder="Search premium products..." value="{{ request.args.get('search', '') }}">
+                    {% if request.args.get('category') %}
+                    <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Nav Actions -->
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link active">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <!-- Cart Button -->
+                <a href="/user/cart" class="cart-button">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span>Cart</span>
+                    <span class="cart-badge" id="cart-count">
+                        {{ cart_items_count if cart_items_count is defined else (session.get('cart')|length if session.get('cart') else 0) }}
+                    </span>
+                </a>
+
+                <!-- User Profile -->
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ session.get('user_name', 'U')[0]|upper }}
+                    </div>
+                    <span>{{ session.get('user_name', 'Customer') }}</span>
+                </div>
+
+                <a href="/user-logout" class="nav-link" style="color: var(--danger);" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Curated Collection</h1>
+                <p class="page-subtitle">Showing {{ products|length }} premium products available for instant order</p>
+            </div>
+
+            <form method="GET" action="/user/products" style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if request.args.get('search') %}
+                <input type="hidden" name="search" value="{{ request.args.get('search') }}">
+                {% endif %}
+                {% if request.args.get('category') %}
+                <input type="hidden" name="category" value="{{ request.args.get('category') }}">
+                {% endif %}
+                <label style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">Sort by:</label>
+                <select name="sort" class="sort-select" onchange="this.form.submit()">
+                    <option value="default" {% if request.args.get('sort') == 'default' %}selected{% endif %}>Featured</option>
+                    <option value="price_low" {% if request.args.get('sort') == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_high" {% if request.args.get('sort') == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="rating" {% if request.args.get('sort') == 'rating' %}selected{% endif %}>Highest Rated</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="category-chips">
+                <a href="/user/products{% if request.args.get('search') %}?search={{ request.args.get('search') }}{% endif %}" 
+                   class="category-chip {% if not request.args.get('category') %}active{% endif %}">
+                   All Categories
+                </a>
+
+                {% for cat in categories %}
+                <a href="/user/products?category={{ cat.category }}{% if request.args.get('search') %}&search={{ request.args.get('search') }}{% endif %}" 
+                   class="category-chip {% if request.args.get('category') == cat.category %}active{% endif %}">
+                   {{ cat.category }}
+                </a>
+                {% endfor %}
+            </div>
+
+            {% if request.args.get('search') or request.args.get('category') %}
+            <div>
+                <a href="/user/products" class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-xmark"></i> Clear Filters
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Products Grid -->
+        {% if products %}
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-image-container">
+                    <a href="/user/product/{{ product.product_id }}">
+                        <img src="{{ url_for('static', filename='uploads/product_images/' + product.image) }}" alt="{{ product.name }}" class="product-image">
+                    </a>
+
+                    {% if product.original_price and product.original_price > product.price %}
+                    <span class="product-badge-float badge badge-sale">
+                        -{{ (((product.original_price - product.price) / product.original_price) * 100)|round|int }}% OFF
+                    </span>
+                    {% else %}
+                    <span class="product-badge-float badge badge-primary">IN STOCK</span>
+                    {% endif %}
+
+                    <div class="product-rating-float">
+                        <i class="fa-solid fa-star"></i> {{ product.rating or '4.8' }}
+                    </div>
+                </div>
+
+                <div class="product-body">
+                    <span class="product-category">{{ product.category }}</span>
+                    <a href="/user/product/{{ product.product_id }}" style="text-decoration: none;">
+                        <h3 class="product-title">{{ product.name }}</h3>
+                    </a>
+                    <p class="product-desc">{{ product.description }}</p>
+
+                    <div class="product-footer">
+                        <div class="product-pricing">
+                            <span class="product-price">₹{{ product.price }}</span>
+                            {% if product.original_price and product.original_price > product.price %}
+                            <span class="product-price-orig">₹{{ product.original_price }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="product-actions">
+                            <a href="/user/product/{{ product.product_id }}" class="btn btn-secondary btn-sm" title="View Details">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                            <button class="btn-add-cart" onclick="addToCart('{{ product.product_id }}', '{{ product.name|replace('\'', '\\\'') }}')">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="background: #fff; border-radius: var(--radius-xl); border: 1px solid var(--border); padding: 4rem 2rem; text-align: center;">
+            <div style="font-size: 3.5rem; color: var(--text-subtle); margin-bottom: 1rem;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">No Products Found</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">We couldn't find any items matching your active search or filters.</p>
+            <a href="/user/products" class="btn btn-primary">
+                View All Products
+            </a>
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        <div class="toast-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <div style="font-weight: 700; font-size: 0.95rem;" id="toast-title">Cart Updated</div>
+            <div style="font-size: 0.85rem; color: #cbd5e1;" id="toast-msg">Item added to your shopping cart.</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Logged in as <strong>{{ session.get('user_name') }}</strong> ({{ session.get('user_email') }})</span>
+        </div>
+    </footer>
+
+    <!-- Interactive Script -->
+    <script>
+        function addToCart(productId, productName) {
+            fetch(`/user/add-to-cart-ajax/${productId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network error");
+                    return response.json();
+                })
+                .then(data => {
+                    const badge = document.getElementById("cart-count");
+                    if (badge) {
+                        badge.innerText = data.cart_count;
+                        badge.style.transform = "scale(1.3)";
+                        setTimeout(() => badge.style.transform = "scale(1)", 200);
+                    }
+                    showToast(productName + " added to your cart!");
+                })
+                .catch(err => {
+                    console.error("Cart error:", err);
+                    window.location.href = `/user/add-to-cart/${productId}`;
+                });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            const toastMsg = document.getElementById("toast-msg");
+            toastMsg.innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

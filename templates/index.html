@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartCart - Premium Shopping Experience</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .portal-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin: 3.5rem 0;
+        }
+        .portal-card {
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--primary-gradient);
+        }
+        .portal-card.admin-card::before {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+        }
+        .portal-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+        }
+        .portal-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .portal-icon.user {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        .portal-icon.admin {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .portal-title {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+        }
+        .portal-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .portal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .features-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin: 3.5rem 0;
+        }
+        .feature-box {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            padding: 1.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            box-shadow: var(--shadow-xs);
+        }
+        .feature-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-md);
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user-login" class="nav-link">
+                    <i class="fa-regular fa-user"></i> Customer Sign In
+                </a>
+                <a href="/user-register" class="btn btn-primary btn-sm">
+                    Create Account
+                </a>
+                <a href="/admin-login" class="nav-link" style="margin-left: 0.5rem; color: #475569;">
+                    <i class="fa-solid fa-shield-halved"></i> Admin Portal
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Hero Section -->
+        <section class="hero-banner">
+            <div class="hero-content">
+                <div class="hero-tag">
+                    <i class="fa-solid fa-crown"></i> Premium E-Commerce Experience
+                </div>
+                <h1 class="hero-title">
+                    Discover Curated <span>Luxury & Innovation</span>
+                </h1>
+                <p class="hero-desc">
+                    Explore high-grade audio gear, premium smart wearables, luxury timepieces, and artisan-crafted goods with instant express delivery.
+                </p>
+                <div class="hero-actions">
+                    <a href="/user-login" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-bag-shopping"></i> Enter Customer Store
+                    </a>
+                    <a href="/admin-login" class="btn btn-secondary btn-lg" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                        <i class="fa-solid fa-gauge-high"></i> Admin Console
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Value Proposition Features -->
+        <div class="features-row">
+            <div class="feature-box">
+                <div class="feature-icon-wrap">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">Express Delivery</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">Free 24-48 hr courier shipping on premium orders.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrap" style="background: #ecfdf5; color: #10b981;">
+                    <i class="fa-solid fa-certificate"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">100% Genuine</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">Every product is verified by verified brand partners.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrap" style="background: #eff6ff; color: #3b82f6;">
+                    <i class="fa-solid fa-shield-check"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">Razorpay Encrypted</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">Safe 256-bit SSL encrypted checkout and UPI.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrap" style="background: #fffbeb; color: #f59e0b;">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">Concierge Support</h4>
+                    <p style="color: var(--text-muted); font-size: 0.88rem;">Dedicated 24/7 customer care & instant invoices.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portal Access Cards -->
+        <div class="portal-cards">
+            <!-- User Store Portal -->
+            <div class="portal-card">
+                <div class="portal-icon user">
+                    <i class="fa-solid fa-user-tag"></i>
+                </div>
+                <h3 class="portal-title">Customer Storefront</h3>
+                <p class="portal-desc">
+                    Browse our full product catalog, filter by collection, manage your real-time shopping cart, and place orders with instant PDF invoices.
+                </p>
+                <div class="portal-actions">
+                    <a href="/user-login" class="btn btn-primary">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Customer Login
+                    </a>
+                    <a href="/user-register" class="btn btn-secondary">
+                        <i class="fa-solid fa-user-plus"></i> Register New Account
+                    </a>
+                </div>
+            </div>
+
+            <!-- Admin Management Portal -->
+            <div class="portal-card admin-card">
+                <div class="portal-icon admin">
+                    <i class="fa-solid fa-sliders"></i>
+                </div>
+                <h3 class="portal-title">Management Suite</h3>
+                <p class="portal-desc">
+                    Executive administration console to manage catalog items, upload high-res imagery, adjust pricing, view analytics, and track store performance.
+                </p>
+                <div class="portal-actions">
+                    <a href="/admin-login" class="btn btn-primary" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
+                        <i class="fa-solid fa-lock"></i> Admin Login
+                    </a>
+                    <a href="/admin-signup" class="btn btn-secondary">
+                        <i class="fa-solid fa-shield"></i> Admin Register (OTP)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured Products Preview -->
+        {% if featured_products %}
+        <div style="margin-top: 4rem;">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Curated Highlights</h2>
+                    <p class="page-subtitle">Handpicked luxury items and customer favorites from our {{ total_products }} catalog items.</p>
+                </div>
+                <a href="/user-login" class="btn btn-outline">
+                    View Full Storefront <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="product-grid">
+                {% for product in featured_products %}
+                <div class="product-card">
+                    <div class="product-image-container">
+                        <img src="{{ url_for('static', filename='uploads/product_images/' + product.image) }}" alt="{{ product.name }}" class="product-image">
+                        <span class="product-badge-float badge badge-sale">FEATURED</span>
+                        <div class="product-rating-float">
+                            <i class="fa-solid fa-star"></i> {{ product.rating or '4.8' }}
+                        </div>
+                    </div>
+                    <div class="product-body">
+                        <span class="product-category">{{ product.category }}</span>
+                        <h3 class="product-title">{{ product.name }}</h3>
+                        <p class="product-desc">{{ product.description }}</p>
+                        <div class="product-footer">
+                            <div class="product-pricing">
+                                <span class="product-price">₹{{ product.price }}</span>
+                                {% if product.original_price and product.original_price > product.price %}
+                                <span class="product-price-orig">₹{{ product.original_price }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="/user-login" class="btn btn-primary btn-sm">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div>
+                <div class="footer-brand">
+                    <i class="fa-solid fa-cart-shopping" style="color: #818cf8;"></i> SmartCart
+                </div>
+                <p style="font-size: 0.92rem; line-height: 1.6; max-width: 340px;">
+                    SmartCart provides a premier e-commerce standard crafted with Flask, MySQL, and seamless Razorpay transactions.
+                </p>
+            </div>
+            <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 1rem;">Shop</h4>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
+                    <li><a href="/user-login" style="color: #94a3b8;">Electronics & Audio</a></li>
+                    <li><a href="/user-login" style="color: #94a3b8;">Luxury Watches</a></li>
+                    <li><a href="/user-login" style="color: #94a3b8;">Gourmet & Living</a></li>
+                    <li><a href="/user-login" style="color: #94a3b8;">Fashion & Footwear</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 1rem;">Customer</h4>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
+                    <li><a href="/user-login" style="color: #94a3b8;">Sign In</a></li>
+                    <li><a href="/user-register" style="color: #94a3b8;">Create Account</a></li>
+                    <li><a href="/user-login" style="color: #94a3b8;">Order History</a></li>
+                    <li><a href="/user-login" style="color: #94a3b8;">Invoice Downloads</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 1rem;">Admin Suite</h4>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem;">
+                    <li><a href="/admin-login" style="color: #94a3b8;">Admin Login</a></li>
+                    <li><a href="/admin-signup" style="color: #94a3b8;">Admin Registration</a></li>
+                    <li><a href="/admin-login" style="color: #94a3b8;">Inventory Management</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 SmartCart Inc. All rights reserved.</span>
+            <span>Crafted with Python Flask & MySQL</span>
+        </div>
+    </footer>
+
+</body>
+</html>

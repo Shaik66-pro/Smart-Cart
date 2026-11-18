@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Security Login - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            background: linear-gradient(135deg, #090d16 0%, #0f172a 60%, #1e1b4b 100%);
+        }
+        .auth-card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 440px;
+            padding: 2.75rem 2.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        .auth-icon {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 1.25rem;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <a href="/">
+                    <div class="auth-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                </a>
+                <span class="badge" style="background: #f1f5f9; color: #0f172a; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-lock"></i> Restricted Console
+                </span>
+                <h2 style="font-size: 1.8rem; margin-top: 0.35rem; margin-bottom: 0.35rem;">Admin Access</h2>
+                <p style="color: var(--text-muted); font-size: 0.92rem;">
+                    Sign in to manage inventory, catalog & analytics
+                </p>
+            </div>
+
+            <!-- Flash alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="alert-container">
+                  {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                      <span>{{ message }}</span>
+                      <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="/admin-login">
+                <div class="form-group">
+                    <label class="form-label">Administrator Email</label>
+                    <div style="position: relative;">
+                        <input type="email" name="email" class="form-control" placeholder="admin@smartcart.com" required style="padding-left: 2.5rem;">
+                        <i class="fa-regular fa-envelope" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-subtle);"></i>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.8rem;">
+                    <label class="form-label">Master Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="admin-pwd" name="password" class="form-control" placeholder="••••••••" required style="padding-left: 2.5rem; padding-right: 2.5rem;">
+                        <i class="fa-solid fa-lock" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-subtle);"></i>
+                        <button type="button" onclick="togglePassword('admin-pwd')" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg btn-block" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
+                    <i class="fa-solid fa-key"></i> Authenticate Administrator
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--text-muted);">
+                Need to register an admin account? 
+                <a href="/admin-signup" style="font-weight: 700; color: var(--primary);">Register with OTP</a>
+            </div>
+
+            <div style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">
+                <a href="/" style="color: var(--text-subtle);"><i class="fa-solid fa-arrow-left"></i> Return to Homepage</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+    </script>
+</body>
+</html>

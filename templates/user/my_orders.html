@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .order-history-card {
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            padding: 1.75rem 2rem;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-normal);
+        }
+        .order-history-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        .order-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .order-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            padding: 1.25rem 0;
+        }
+        .order-meta-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
+        }
+        .order-meta-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .order-actions-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link active">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <a href="/user/cart" class="cart-button">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span>Cart</span>
+                    <span class="cart-badge" id="cart-count">
+                        {{ session.get('cart')|length if session.get('cart') else 0 }}
+                    </span>
+                </a>
+
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ session.get('user_name', 'U')[0]|upper }}
+                    </div>
+                    <span>{{ session.get('user_name', 'Customer') }}</span>
+                </div>
+
+                <a href="/user-logout" class="nav-link" style="color: var(--danger);" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">My Orders</h1>
+                <p class="page-subtitle">Track, review, and download PDF tax invoices for all past transactions</p>
+            </div>
+            <a href="/user/products" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> Place New Order
+            </a>
+        </div>
+
+        {% if not orders %}
+        <!-- Empty State -->
+        <div style="background: #fff; border-radius: var(--radius-xl); border: 1px solid var(--border); padding: 5rem 2rem; text-align: center; box-shadow: var(--shadow-sm);">
+            <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">No Orders Found</h2>
+            <p style="color: var(--text-muted); max-width: 440px; margin: 0 auto 2rem; font-size: 1rem;">
+                You have not placed any orders yet. Discover our premium electronics, watches, and artisan goods!
+            </p>
+            <a href="/user/products" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-bag-shopping"></i> Start Shopping
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Orders List -->
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-history-card">
+                <div class="order-header-row">
+                    <div style="display: flex; align-items: center; gap: 0.85rem;">
+                        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <div>
+                            <div style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; color: var(--text-main);">
+                                Order #{{ order.order_id }}
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                Placed on {{ order.created_at }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+                            <i class="fa-solid fa-check"></i> {{ (order.payment_status or 'paid')|upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="order-info-grid">
+                    <div>
+                        <div class="order-meta-label">Payment ID</div>
+                        <div class="order-meta-val" style="font-family: monospace; font-size: 0.9rem; font-weight: 600;">
+                            {{ order.razorpay_payment_id or 'rzp_test_pay' }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="order-meta-label">Total Amount Paid</div>
+                        <div class="order-meta-val" style="color: var(--primary); font-size: 1.25rem; font-family: var(--font-display);">
+                            ₹{{ order.amount }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="order-meta-label">Order Items</div>
+                        <div class="order-meta-val" style="font-size: 0.95rem; font-weight: 600;">
+                            {{ order.total_items or 'Multiple' }} Items Included
+                        </div>
+                    </div>
+                </div>
+
+                {% if order.items_summary %}
+                <div style="background: var(--bg-alt); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 0.75rem; font-size: 0.88rem; color: var(--text-muted);">
+                    <strong style="color: var(--text-main);">Items:</strong> {{ order.items_summary }}
+                </div>
+                {% endif %}
+
+                <div class="order-actions-row">
+                    <a href="/user/order-success/{{ order.order_id }}" class="btn btn-secondary btn-sm">
+                        <i class="fa-regular fa-eye"></i> View Order Details
+                    </a>
+                    <a href="/user/download-invoice/{{ order.order_id }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-file-arrow-down"></i> Download Invoice (PDF)
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Customer Portal</span>
+        </div>
+    </footer>
+
+</body>
+</html>

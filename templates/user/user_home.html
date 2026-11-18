@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .welcome-card {
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            padding: 2.25rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .user-welcome-info {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .user-avatar-lg {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: #fff;
+            font-size: 1.8rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+        .dashboard-stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .dashboard-stat-pill {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            min-width: 120px;
+        }
+        .dashboard-stat-num {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .dashboard-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-weight: 600;
+        }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 3.5rem;
+        }
+        .category-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            text-decoration: none;
+            transition: all var(--transition-normal);
+            box-shadow: var(--shadow-xs);
+        }
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+        .category-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.75rem;
+            border-radius: var(--radius-md);
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+        .category-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .toast-notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            background: #0f172a;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-normal);
+            pointer-events: none;
+        }
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <!-- Search -->
+            <div class="nav-search">
+                <form method="GET" action="/user/products">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="search" placeholder="Search premium products...">
+                </form>
+            </div>
+
+            <!-- Nav Actions -->
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link active">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <a href="/user/cart" class="cart-button">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span>Cart</span>
+                    <span class="cart-badge" id="cart-count">
+                        {{ cart_items_count if cart_items_count is defined else (session.get('cart')|length if session.get('cart') else 0) }}
+                    </span>
+                </a>
+
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ user_name[0]|upper }}
+                    </div>
+                    <span>{{ user_name }}</span>
+                </div>
+
+                <a href="/user-logout" class="nav-link" style="color: var(--danger);" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Welcome Hub Card -->
+        <div class="welcome-card">
+            <div class="user-welcome-info">
+                <div class="user-avatar-lg">
+                    {{ user_name[0]|upper }}
+                </div>
+                <div>
+                    <span class="badge badge-gold" style="margin-bottom: 0.35rem;">
+                        <i class="fa-solid fa-crown"></i> Prime Customer
+                    </span>
+                    <h2 style="font-size: 1.8rem; margin-bottom: 0.2rem;">Welcome back, {{ user_name }}!</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Ready to discover our latest exclusive tech and lifestyle arrivals?
+                    </p>
+                </div>
+            </div>
+
+            <div class="dashboard-stats">
+                <div class="dashboard-stat-pill">
+                    <div class="dashboard-stat-num">{{ order_count if order_count is defined else 0 }}</div>
+                    <div class="dashboard-stat-label">Past Orders</div>
+                </div>
+                <div class="dashboard-stat-pill">
+                    <div class="dashboard-stat-num" id="stat-cart-count">
+                        {{ cart_items_count if cart_items_count is defined else (session.get('cart')|length if session.get('cart') else 0) }}
+                    </div>
+                    <div class="dashboard-stat-label">Cart Items</div>
+                </div>
+                <a href="/user/cart" class="btn btn-primary" style="align-self: center;">
+                    <i class="fa-solid fa-cart-shopping"></i> View Cart
+                </a>
+            </div>
+        </div>
+
+        <!-- Featured Collections Hero -->
+        <section class="hero-banner" style="padding: 3rem 2.5rem; margin-bottom: 3rem;">
+            <div class="hero-content">
+                <div class="hero-tag">
+                    <i class="fa-solid fa-sparkles"></i> Fall 2026 Season Exclusives
+                </div>
+                <h2 class="hero-title" style="font-size: 2.6rem;">
+                    Elevate Your <span>Daily Standard</span>
+                </h2>
+                <p class="hero-desc" style="font-size: 1.05rem; margin-bottom: 1.5rem;">
+                    From audiophile wireless ANC acoustics to precision chronographs and luxury leather essentials.
+                </p>
+                <div class="hero-actions">
+                    <a href="/user/products" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-compass"></i> Explore All Products
+                    </a>
+                    <a href="/user/my-orders" class="btn btn-secondary btn-lg" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                        <i class="fa-solid fa-receipt"></i> Track My Orders
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <div class="page-header" style="margin-bottom: 1.25rem;">
+            <div>
+                <h3 style="font-size: 1.5rem;">Shop by Category</h3>
+                <p class="page-subtitle">Find exactly what you're looking for across our luxury departments</p>
+            </div>
+        </div>
+
+        <div class="category-grid">
+            <a href="/user/products?category=Electronics" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-laptop"></i></div>
+                <div class="category-name">Electronics</div>
+            </a>
+            <a href="/user/products?category=Wearables" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="category-name">Wearables</div>
+            </a>
+            <a href="/user/products?category=Accessories" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-glasses"></i></div>
+                <div class="category-name">Accessories</div>
+            </a>
+            <a href="/user/products?category=Fashion %26 Footwear" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-shoe-prints"></i></div>
+                <div class="category-name">Fashion</div>
+            </a>
+            <a href="/user/products?category=Gourmet %26 Beverages" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-mug-hot"></i></div>
+                <div class="category-name">Gourmet</div>
+            </a>
+            <a href="/user/products?category=Home %26 Living" class="category-card">
+                <div class="category-icon"><i class="fa-solid fa-couch"></i></div>
+                <div class="category-name">Home & Living</div>
+            </a>
+        </div>
+
+        <!-- Featured Products Grid -->
+        {% if featured_products %}
+        <div class="page-header">
+            <div>
+                <h3 style="font-size: 1.5rem;">Recommended For You</h3>
+                <p class="page-subtitle">Top-rated items favored by our elite member network</p>
+            </div>
+            <a href="/user/products" class="btn btn-outline btn-sm">
+                View Full Catalog <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="product-grid">
+            {% for product in featured_products %}
+            <div class="product-card">
+                <div class="product-image-container">
+                    <a href="/user/product/{{ product.product_id }}">
+                        <img src="{{ url_for('static', filename='uploads/product_images/' + product.image) }}" alt="{{ product.name }}" class="product-image">
+                    </a>
+                    {% if product.original_price and product.original_price > product.price %}
+                    <span class="product-badge-float badge badge-sale">
+                        -{{ (((product.original_price - product.price) / product.original_price) * 100)|round|int }}% OFF
+                    </span>
+                    {% endif %}
+                    <div class="product-rating-float">
+                        <i class="fa-solid fa-star"></i> {{ product.rating or '4.9' }}
+                    </div>
+                </div>
+
+                <div class="product-body">
+                    <span class="product-category">{{ product.category }}</span>
+                    <a href="/user/product/{{ product.product_id }}" style="text-decoration: none;">
+                        <h3 class="product-title">{{ product.name }}</h3>
+                    </a>
+                    <p class="product-desc">{{ product.description }}</p>
+
+                    <div class="product-footer">
+                        <div class="product-pricing">
+                            <span class="product-price">₹{{ product.price }}</span>
+                            {% if product.original_price and product.original_price > product.price %}
+                            <span class="product-price-orig">₹{{ product.original_price }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="product-actions">
+                            <a href="/user/product/{{ product.product_id }}" class="btn btn-secondary btn-sm" title="View Details">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                            <button class="btn-add-cart" onclick="addToCart('{{ product.product_id }}', '{{ product.name|replace('\'', '\\\'') }}')">
+                                <i class="fa-solid fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Item Added</div>
+            <div style="font-size: 0.85rem; color: #cbd5e1;" id="toast-msg">Product successfully added to cart.</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Logged in as <strong>{{ user_name }}</strong></span>
+        </div>
+    </footer>
+
+    <script>
+        function addToCart(productId, productName) {
+            fetch(`/user/add-to-cart-ajax/${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById("cart-count");
+                    const statCount = document.getElementById("stat-cart-count");
+                    if (badge) badge.innerText = data.cart_count;
+                    if (statCount) statCount.innerText = data.cart_count;
+                    showToast(productName + " added to your cart!");
+                })
+                .catch(err => {
+                    window.location.href = `/user/add-to-cart/${productId}`;
+                });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toast-msg").innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Shopping Cart - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ session.get('user_name', 'U')[0]|upper }}
+                    </div>
+                    <span>{{ session.get('user_name', 'Customer') }}</span>
+                </div>
+
+                <a href="/user-logout" class="nav-link" style="color: var(--danger);" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Shopping Bag</h1>
+                <p class="page-subtitle">Review your selected items and proceed to secure checkout</p>
+            </div>
+            {% if cart %}
+            <a href="/user/products" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Continue Shopping
+            </a>
+            {% endif %}
+        </div>
+
+        {% if not cart %}
+        <!-- Empty Cart State -->
+        <div style="background: #fff; border-radius: var(--radius-xl); border: 1px solid var(--border); padding: 5rem 2rem; text-align: center; box-shadow: var(--shadow-sm);">
+            <div style="width: 80px; height: 80px; margin: 0 auto 1.5rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
+                <i class="fa-solid fa-bag-shopping"></i>
+            </div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Your Cart is Empty</h2>
+            <p style="color: var(--text-muted); max-width: 420px; margin: 0 auto 2rem; font-size: 1rem;">
+                You haven't added any luxury pieces or daily essentials to your bag yet. Explore our curated catalog now!
+            </p>
+            <a href="/user/products" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-compass"></i> Discover Products
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Active Cart Layout -->
+        <div class="cart-layout">
+            <!-- Left: Items list -->
+            <div class="cart-items-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;">
+                    <h3 style="font-size: 1.25rem;">Items in Cart ({{ cart|length }})</h3>
+                    <span style="font-size: 0.88rem; color: var(--text-muted);">Prices in INR (₹)</span>
+                </div>
+
+                {% for pid, item in cart.items() %}
+                <div class="cart-item">
+                    <img src="{{ url_for('static', filename='uploads/product_images/' + item.image) }}" alt="{{ item.name }}" class="cart-item-img">
+
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">{{ item.name }}</div>
+                        <div class="cart-item-price">₹{{ item.price }} each</div>
+                    </div>
+
+                    <!-- Quantity Stepper -->
+                    <div class="qty-control">
+                        <a href="/user/cart/decrease/{{ pid }}" class="qty-btn" title="Decrease Quantity">
+                            <i class="fa-solid fa-minus" style="font-size: 0.75rem;"></i>
+                        </a>
+                        <span class="qty-val">{{ item.quantity }}</span>
+                        <a href="/user/cart/increase/{{ pid }}" class="qty-btn" title="Increase Quantity">
+                            <i class="fa-solid fa-plus" style="font-size: 0.75rem;"></i>
+                        </a>
+                    </div>
+
+                    <!-- Line Total -->
+                    <div class="cart-item-total">
+                        ₹{{ item.price * item.quantity }}
+                    </div>
+
+                    <!-- Remove -->
+                    <a href="/user/cart/remove/{{ pid }}" class="cart-remove-btn" title="Remove Item">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </a>
+                </div>
+                {% endfor %}
+
+                <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg-alt); padding: 1rem 1.25rem; border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; color: var(--text-muted);">
+                        <i class="fa-solid fa-truck" style="color: var(--primary);"></i>
+                        <span>Orders over ₹999 qualify for <strong>FREE Express Courier Shipping</strong>.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Order Summary -->
+            <div class="summary-card">
+                <h3 class="summary-title">Order Summary</h3>
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span style="font-weight: 600; color: var(--text-main);">₹{{ grand_total }}</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Shipping Estimate</span>
+                    {% if grand_total >= 999 %}
+                    <span style="color: var(--success); font-weight: 700;">FREE</span>
+                    {% else %}
+                    <span style="font-weight: 600; color: var(--text-main);">₹99</span>
+                    {% endif %}
+                </div>
+
+                <div class="summary-row">
+                    <span>Applicable Taxes (GST)</span>
+                    <span style="color: var(--text-muted);">Included</span>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Grand Total</span>
+                    <span>₹{{ grand_total if grand_total >= 999 else grand_total + 99 }}</span>
+                </div>
+
+                <!-- Checkout CTA -->
+                <div style="margin-top: 1.75rem;">
+                    <a href="/user/checkout" class="btn btn-primary btn-lg btn-block">
+                        <i class="fa-solid fa-shield-check"></i> Proceed to Checkout
+                    </a>
+                </div>
+
+                <!-- Trust badges -->
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem; font-size: 0.82rem; color: var(--text-muted); text-align: center; display: flex; flex-direction: column; gap: 0.6rem;">
+                    <div><i class="fa-solid fa-lock" style="color: var(--success);"></i> 256-bit Bank Grade Encrypted Payment</div>
+                    <div><i class="fa-solid fa-arrows-rotate" style="color: var(--primary);"></i> 7-Day Replacement Guarantee</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Logged in as <strong>{{ session.get('user_name') }}</strong></span>
+        </div>
+    </footer>
+
+</body>
+</html>

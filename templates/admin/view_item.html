@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} - SmartCart Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Admin Top Navbar -->
+    <header class="navbar" style="background: #0f172a; border-color: #1e293b;">
+        <div class="nav-container">
+            <a href="/admin-dashboard" class="nav-brand" style="color: #fff;">
+                <div class="nav-brand-icon" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                Smart<span>Cart</span> <span style="font-size: 0.75rem; background: #334155; color: #cbd5e1; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); margin-left: 0.4rem; font-weight: 600;">ADMIN</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/admin-dashboard" class="nav-link" style="color: #cbd5e1;">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="/admin/item-list" class="nav-link active" style="color: #818cf8; background: rgba(99, 102, 241, 0.15);">
+                    <i class="fa-solid fa-boxes-stacked"></i> Products Catalog
+                </a>
+                <a href="/admin/add-item" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-plus"></i> Add Product
+                </a>
+                <a href="/admin/profile" class="nav-link" style="color: #cbd5e1;">
+                    <i class="fa-solid fa-user-gear"></i> Profile
+                </a>
+                <a href="/admin-logout" class="nav-link" style="color: #f87171;" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrapper" style="max-width: 800px;">
+
+        <div class="page-header" style="margin-bottom: 1.5rem;">
+            <div>
+                <h1 class="page-title">Product Details #{{ product.product_id }}</h1>
+                <p class="page-subtitle">Inspect inventory item specification</p>
+            </div>
+            <a href="/admin/item-list" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i> Back to Inventory
+            </a>
+        </div>
+
+        <div style="background: #fff; border-radius: var(--radius-xl); border: 1px solid var(--border); padding: 2.5rem; box-shadow: var(--shadow-md);">
+            <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2.5rem; align-items: start;">
+                <div>
+                    <img src="{{ url_for('static', filename='uploads/product_images/' + product.image) }}" 
+                         alt="{{ product.name }}" 
+                         style="width: 100%; height: 240px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--border);">
+                    <div style="text-align: center; margin-top: 0.75rem;">
+                        <span class="badge badge-primary">{{ product.category }}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+                        SKU ID: SC-PROD-{{ product.product_id }}
+                    </div>
+                    <h2 style="font-size: 1.8rem; margin-bottom: 0.75rem;">{{ product.name }}</h2>
+
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--text-main);">
+                            ₹{{ product.price }}
+                        </div>
+                        {% if product.original_price and product.original_price > product.price %}
+                        <div style="font-size: 1.1rem; color: var(--text-subtle); text-decoration: line-through;">
+                            ₹{{ product.original_price }}
+                        </div>
+                        {% endif %}
+                        <div style="color: #f59e0b; font-weight: 700;">
+                            <i class="fa-solid fa-star"></i> {{ product.rating or '4.8' }}
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border);">
+                        <h4 style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4rem; letter-spacing: 0.05em;">Description</h4>
+                        <p style="font-size: 0.95rem; color: var(--text-main); line-height: 1.6;">{{ product.description }}</p>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="/admin/update-item/{{ product.product_id }}" class="btn btn-primary">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit This Product
+                        </a>
+                        <a href="/admin/delete-item/{{ product.product_id }}" class="btn btn-danger" onclick="return confirm('Delete this product permanently?')">
+                            <i class="fa-regular fa-trash-can"></i> Delete Product
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" style="background: #0f172a; border-color: #1e293b;">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none; color: #64748b;">
+            <span>&copy; 2026 SmartCart Admin Control Center</span>
+            <span><a href="/admin/item-list" style="color: #818cf8;">Back to Inventory</a></span>
+        </div>
+    </footer>
+
+</body>
+</html>

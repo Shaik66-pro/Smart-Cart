@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+        .breadcrumbs a {
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .breadcrumbs a:hover {
+            color: var(--primary);
+        }
+        .stock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 1rem;
+        }
+        .stock-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+        .buy-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .toast-notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            background: #0f172a;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-normal);
+            pointer-events: none;
+        }
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Unified Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="/user-dashboard" class="nav-brand">
+                <div class="nav-brand-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                Smart<span>Cart</span>
+            </a>
+
+            <!-- Search -->
+            <div class="nav-search">
+                <form method="GET" action="/user/products">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="search" placeholder="Search premium products...">
+                </form>
+            </div>
+
+            <!-- Nav Actions -->
+            <div class="nav-links">
+                <a href="/user-dashboard" class="nav-link">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <a href="/user/products" class="nav-link">
+                    <i class="fa-solid fa-grid-2"></i> Catalog
+                </a>
+                <a href="/user/my-orders" class="nav-link">
+                    <i class="fa-solid fa-box-open"></i> Orders
+                </a>
+
+                <a href="/user/cart" class="cart-button">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span>Cart</span>
+                    <span class="cart-badge" id="cart-count">
+                        {{ cart_items_count if cart_items_count is defined else (session.get('cart')|length if session.get('cart') else 0) }}
+                    </span>
+                </a>
+
+                <div class="user-pill">
+                    <div class="user-avatar-mini">
+                        {{ session.get('user_name', 'U')[0]|upper }}
+                    </div>
+                    <span>{{ session.get('user_name', 'Customer') }}</span>
+                </div>
+
+                <a href="/user-logout" class="nav-link" style="color: var(--danger);" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrapper">
+
+        <!-- Breadcrumbs -->
+        <div class="breadcrumbs">
+            <a href="/user-dashboard">Home</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i>
+            <a href="/user/products">Catalog</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i>
+            <a href="/user/products?category={{ product.category }}">{{ product.category }}</a>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i>
+            <span style="color: var(--text-main); font-weight: 600;">{{ product.name }}</span>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-grid">
+            <!-- Left: Image Showcase -->
+            <div class="details-gallery">
+                <div class="details-main-img-wrap">
+                    <img src="{{ url_for('static', filename='uploads/product_images/' + product.image) }}" alt="{{ product.name }}" class="details-main-img">
+                </div>
+            </div>
+
+            <!-- Right: Product Info -->
+            <div class="details-info">
+                <span class="details-category">{{ product.category }}</span>
+                <h1 class="details-title">{{ product.name }}</h1>
+
+                <!-- Rating -->
+                <div class="details-rating-row">
+                    <div class="stars">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star-half-stroke"></i>
+                    </div>
+                    <span style="font-weight: 700;">{{ product.rating or '4.8' }} / 5.0</span>
+                    <span style="color: var(--text-subtle);">•</span>
+                    <span style="color: var(--text-muted); font-size: 0.92rem;">142 Verified Customer Reviews</span>
+                </div>
+
+                <!-- Stock Status -->
+                <div class="stock-badge">
+                    <div class="stock-dot"></div>
+                    <span>In Stock — Ready for Express Dispatch</span>
+                </div>
+
+                <!-- Pricing -->
+                <div class="details-price-row">
+                    <div class="details-price">₹{{ product.price }}</div>
+                    {% if product.original_price and product.original_price > product.price %}
+                    <div class="details-price-orig">₹{{ product.original_price }}</div>
+                    <span class="badge badge-sale">
+                        SAVE {{ (((product.original_price - product.price) / product.original_price) * 100)|round|int }}%
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <p class="details-desc">
+                    {{ product.description }}
+                </p>
+
+                <!-- Value Perks -->
+                <div class="perks-grid">
+                    <div class="perk-card">
+                        <div class="perk-icon" style="color: var(--primary);"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="perk-title">1 Year Warranty</div>
+                        <div class="perk-sub">100% Comprehensive</div>
+                    </div>
+                    <div class="perk-card">
+                        <div class="perk-icon" style="color: var(--success);"><i class="fa-solid fa-truck-bolt"></i></div>
+                        <div class="perk-title">Fast Shipping</div>
+                        <div class="perk-sub">Dispatched in 24h</div>
+                    </div>
+                    <div class="perk-card">
+                        <div class="perk-icon" style="color: var(--accent);"><i class="fa-solid fa-rotate-left"></i></div>
+                        <div class="perk-title">7 Days Return</div>
+                        <div class="perk-sub">Hassle-Free Policy</div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="buy-actions">
+                    <button class="btn btn-primary btn-lg" style="flex: 1;" onclick="addToCartAndNotify('{{ product.product_id }}', '{{ product.name|replace('\'', '\\\'') }}')">
+                        <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                    </button>
+                    <a href="/user/add-to-cart/{{ product.product_id }}" class="btn btn-success btn-lg" style="flex: 1;">
+                        <i class="fa-solid fa-bolt"></i> Buy Now
+                    </a>
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 1.25rem; font-size: 0.88rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-lock" style="color: var(--success);"></i>
+                    <span>Guaranteed 256-bit safe checkout powered by Razorpay.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Products Section -->
+        {% if related_products %}
+        <div style="margin-top: 4.5rem;">
+            <div class="page-header">
+                <div>
+                    <h3 style="font-size: 1.5rem;">More in {{ product.category }}</h3>
+                    <p class="page-subtitle">Frequently viewed together with this item</p>
+                </div>
+            </div>
+
+            <div class="product-grid">
+                {% for item in related_products %}
+                <div class="product-card">
+                    <div class="product-image-container">
+                        <a href="/user/product/{{ item.product_id }}">
+                            <img src="{{ url_for('static', filename='uploads/product_images/' + item.image) }}" alt="{{ item.name }}" class="product-image">
+                        </a>
+                        <div class="product-rating-float">
+                            <i class="fa-solid fa-star"></i> {{ item.rating or '4.8' }}
+                        </div>
+                    </div>
+                    <div class="product-body">
+                        <span class="product-category">{{ item.category }}</span>
+                        <a href="/user/product/{{ item.product_id }}" style="text-decoration: none;">
+                            <h4 class="product-title">{{ item.name }}</h4>
+                        </a>
+                        <div class="product-footer">
+                            <div class="product-pricing">
+                                <span class="product-price">₹{{ item.price }}</span>
+                            </div>
+                            <a href="/user/product/{{ item.product_id }}" class="btn btn-primary btn-sm">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-notification">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Cart Updated</div>
+            <div style="font-size: 0.85rem; color: #cbd5e1;" id="toast-msg">Added to cart!</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none;">
+            <span>&copy; 2026 SmartCart. All rights reserved.</span>
+            <span>Logged in as <strong>{{ session.get('user_name') }}</strong></span>
+        </div>
+    </footer>
+
+    <script>
+        function addToCartAndNotify(productId, productName) {
+            fetch(`/user/add-to-cart-ajax/${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById("cart-count");
+                    if (badge) badge.innerText = data.cart_count;
+                    showToast(productName + " added to your cart!");
+                })
+                .catch(err => {
+                    window.location.href = `/user/add-to-cart/${productId}`;
+                });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            document.getElementById("toast-msg").innerText = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 3000);
+        }
+    </script>
+</body>
+</html>

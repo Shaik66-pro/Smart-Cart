@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SmartCart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Admin Top Navbar -->
+    <header class="navbar" style="background: #0f172a; border-color: #1e293b;">
+        <div class="nav-container">
+            <a href="/admin-dashboard" class="nav-brand" style="color: #fff;">
+                <div class="nav-brand-icon" style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                Smart<span>Cart</span> <span style="font-size: 0.75rem; background: #334155; color: #cbd5e1; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); margin-left: 0.4rem; font-weight: 600;">ADMIN</span>
+            </a>
+
+            <div class="nav-links">
+                <a href="/admin-dashboard" class="nav-link active" style="color: #818cf8; background: rgba(99, 102, 241, 0.15);">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+                <a href="/admin/item-list" class="nav-link" style="color: #cbd5e1;">
+                    <i class="fa-solid fa-boxes-stacked"></i> Products Catalog
+                </a>
+                <a href="/admin/add-item" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-plus"></i> Add Product
+                </a>
+                <a href="/admin/profile" class="nav-link" style="color: #cbd5e1;">
+                    <i class="fa-solid fa-user-gear"></i> Profile
+                </a>
+                <a href="/admin-logout" class="nav-link" style="color: #f87171;" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Admin Container -->
+    <main class="main-wrapper">
+
+        <!-- Flash alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert-container">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                  <span>{{ message }}</span>
+                  <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Welcome Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Executive Overview</h1>
+                <p class="page-subtitle">Welcome back, <strong>{{ admin_name }}</strong>. Here's a live summary of your SmartCart operations.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="/admin/add-item" class="btn btn-primary">
+                    <i class="fa-solid fa-circle-plus"></i> Add New Product
+                </a>
+                <a href="/admin/item-list" class="btn btn-secondary">
+                    <i class="fa-solid fa-table-list"></i> Full Inventory
+                </a>
+            </div>
+        </div>
+
+        <!-- 4 KPI Stats Cards -->
+        <div class="admin-stats-grid">
+            <!-- Total Products -->
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ products_count if products_count is defined else 14 }}</div>
+                    <div class="stat-label">Active Catalog Products</div>
+                </div>
+            </div>
+
+            <!-- Total Orders -->
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-cart-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ orders_count if orders_count is defined else 0 }}</div>
+                    <div class="stat-label">Customer Orders Placed</div>
+                </div>
+            </div>
+
+            <!-- Revenue -->
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
+                </div>
+                <div>
+                    <div class="stat-value">₹{{ total_revenue if total_revenue is defined else '0.00' }}</div>
+                    <div class="stat-label">Total Revenue Processed</div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="stat-card">
+                <div class="stat-icon amber">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ categories_count if categories_count is defined else 6 }}</div>
+                    <div class="stat-label">Product Categories</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Products Section -->
+        <div class="table-card" style="margin-bottom: 2.5rem;">
+            <div style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+                <div>
+                    <h3 style="font-size: 1.25rem;">Recent Products in Catalog</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">Quick management of active store inventory</p>
+                </div>
+                <a href="/admin/item-list" class="btn btn-secondary btn-sm">
+                    View All Products <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Image</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Rating</th>
+                        <th style="text-align: right;">Quick Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in recent_products if recent_products is defined %}
+                    <tr>
+                        <td>
+                            <img src="{{ url_for('static', filename='uploads/product_images/' + p.image) }}" alt="{{ p.name }}" style="width: 50px; height: 50px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border);">
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-main);">{{ p.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-primary">{{ p.category }}</span>
+                        </td>
+                        <td style="font-weight: 700; font-family: var(--font-display);">
+                            ₹{{ p.price }}
+                        </td>
+                        <td>
+                            <span style="color: #f59e0b; font-weight: 700;"><i class="fa-solid fa-star"></i> {{ p.rating or '4.8' }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="/admin/view-item/{{ p.product_id }}" class="btn btn-secondary btn-sm" title="View"><i class="fa-regular fa-eye"></i></a>
+                            <a href="/admin/update-item/{{ p.product_id }}" class="btn btn-secondary btn-sm" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                            <a href="/admin/delete-item/{{ p.product_id }}" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this product?')"><i class="fa-regular fa-trash-can"></i></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                            No products yet. <a href="/admin/add-item">Click here to add one.</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" style="background: #0f172a; border-color: #1e293b;">
+        <div class="footer-bottom" style="margin-top: 0; padding-top: 0; border: none; color: #64748b;">
+            <span>&copy; 2026 SmartCart Admin Control Center</span>
+            <span>Logged in as <strong>{{ admin_name }}</strong></span>
+        </div>
+    </footer>
+
+</body>
+</html>
