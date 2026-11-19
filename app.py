@@ -52,13 +52,18 @@ app.config['ADMIN_UPLOAD_FOLDER'] = ADMIN_UPLOAD_FOLDER
 
 # ---------------- DB & RAZORPAY HELPERS ----------------
 def get_db_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST", getattr(config, "DB_HOST", "localhost")),
-        port=int(os.getenv("DB_PORT", getattr(config, "DB_PORT", 3306))),
-        user=os.getenv("DB_USER", getattr(config, "DB_USER", "root")),
-        password=os.getenv("DB_PASSWORD", getattr(config, "DB_PASSWORD", "")),
-        database=os.getenv("DB_NAME", getattr(config, "DB_NAME", "smart_cart"))
-    )
+    try:
+        conn = mysql.connector.connect(
+            host=os.getenv("DB_HOST", getattr(config, "DB_HOST", "localhost")),
+            port=int(os.getenv("DB_PORT", getattr(config, "DB_PORT", 3306))),
+            user=os.getenv("DB_USER", getattr(config, "DB_USER", "root")),
+            password=os.getenv("DB_PASSWORD", getattr(config, "DB_PASSWORD", "")),
+            database=os.getenv("DB_NAME", getattr(config, "DB_NAME", "smart_cart")),
+            connection_timeout=10
+        )
+        return conn
+    except mysql.connector.Error as e:
+        raise ConnectionError(f"Database connection failed: {e}")
 
 
 def get_razorpay_keys():
@@ -82,17 +87,21 @@ def get_razorpay_client():
 # ==============================================================================
 @app.route("/")
 def home():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM products WHERE is_featured = 1 ORDER BY product_id DESC LIMIT 8")
-    featured_products = cursor.fetchall()
+        cursor.execute("SELECT * FROM products WHERE is_featured = 1 ORDER BY product_id DESC LIMIT 8")
+        featured_products = cursor.fetchall()
 
-    cursor.execute("SELECT COUNT(*) AS total_items FROM products")
-    total_products = cursor.fetchone()['total_items']
+        cursor.execute("SELECT COUNT(*) AS total_items FROM products")
+        total_products = cursor.fetchone()['total_items']
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        featured_products = []
+        total_products = 0
 
     return render_template(
         "index.html",
@@ -1130,6 +1139,22 @@ def user_logout():
     session.pop('user_email', None)
     flash("You have been securely logged out.", "success")
     return redirect('/user-login')
+
+
+# ==============================================================================
+# GLOBAL ERROR HANDLERS
+# ==============================================================================
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template("500.html"), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return render_template("500.html", error=str(e)), 500
 
 
 # ==============================================================================

@@ -10,5 +10,4 @@ Werkzeug==3.1.8
 Jinja2==3.1.6
 requests==2.34.2
 pypdf==6.15.0
-gunicorn==27.0.1
 python-dotenv==1.2.4
