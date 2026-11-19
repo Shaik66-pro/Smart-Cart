@@ -1,0 +1,1 @@
+web: venv\Scripts\gunicorn app:app

@@ -24,7 +24,7 @@
   --info: #3b82f6;
 
   /* Neutrals */
-  --bg-page: #f8fafc;
+  --bg-page: linear-gradient(135deg, #1e3a8a, #4f46e5);
   --bg-card: #ffffff;
   --bg-alt: #f1f5f9;
   --text-main: #0f172a;
