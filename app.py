@@ -7,28 +7,41 @@ from flask_mail import Mail, Message
 import mysql.connector
 import bcrypt
 import random
-import config
 import os
 from werkzeug.utils import secure_filename
 import razorpay
 import traceback
-from utils.pdf_generator import generate_pdf
+
+try:
+    import config
+except ImportError:
+    config = None
+
+try:
+    from utils.pdf_generator import generate_pdf
+except Exception:
+    generate_pdf = None
 
 app = Flask(__name__)
-app.secret_key = config.SECRET_KEY
+app.secret_key = os.getenv("SECRET_KEY", getattr(config, "SECRET_KEY", "smartcart_secret_key_2026"))
 
 # ---------------- EMAIL CONFIGURATION ----------------
-app.config['MAIL_SERVER'] = config.MAIL_SERVER
-app.config['MAIL_PORT'] = config.MAIL_PORT
-app.config['MAIL_USE_TLS'] = config.MAIL_USE_TLS
-app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
-app.config['MAIL_PASSWORD'] = config.MAIL_PASSWORD
+app.config['MAIL_SERVER'] = os.getenv("MAIL_SERVER", getattr(config, "MAIL_SERVER", "smtp.gmail.com"))
+app.config['MAIL_PORT'] = int(os.getenv("MAIL_PORT", getattr(config, "MAIL_PORT", 587)))
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME", getattr(config, "MAIL_USERNAME", ""))
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD", getattr(config, "MAIL_PASSWORD", ""))
 
 mail = Mail(app)
 
-# ---------------- UPLOAD CONFIGURATION ----------------
-UPLOAD_FOLDER = os.path.join('static', 'uploads', 'product_images')
-ADMIN_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'admin_profile')
+# ---------------- UPLOAD CONFIGURATION (VERCEL /tmp SAFE) ----------------
+IS_VERCEL = bool(os.getenv("VERCEL"))
+if IS_VERCEL:
+    UPLOAD_FOLDER = "/tmp/product_images"
+    ADMIN_UPLOAD_FOLDER = "/tmp/admin_profile"
+else:
+    UPLOAD_FOLDER = os.path.join("static", "uploads", "product_images")
+    ADMIN_UPLOAD_FOLDER = os.path.join("static", "uploads", "admin_profile")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(ADMIN_UPLOAD_FOLDER, exist_ok=True)
@@ -36,20 +49,32 @@ os.makedirs(ADMIN_UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['ADMIN_UPLOAD_FOLDER'] = ADMIN_UPLOAD_FOLDER
 
-# ---------------- DB CONNECTION HELPER ----------------
+
+# ---------------- DB & RAZORPAY HELPERS ----------------
 def get_db_connection():
     return mysql.connector.connect(
-        host=config.DB_HOST,
-        user=config.DB_USER,
-        password=config.DB_PASSWORD,
-        database=config.DB_NAME
+        host=os.getenv("DB_HOST", getattr(config, "DB_HOST", "localhost")),
+        port=int(os.getenv("DB_PORT", getattr(config, "DB_PORT", 3306))),
+        user=os.getenv("DB_USER", getattr(config, "DB_USER", "root")),
+        password=os.getenv("DB_PASSWORD", getattr(config, "DB_PASSWORD", "")),
+        database=os.getenv("DB_NAME", getattr(config, "DB_NAME", "smart_cart"))
     )
 
+
+def get_razorpay_keys():
+    key_id = os.getenv("RAZORPAY_KEY_ID", getattr(config, "RAZORPAY_KEY_ID", ""))
+    key_secret = os.getenv("RAZORPAY_KEY_SECRET", getattr(config, "RAZORPAY_KEY_SECRET", ""))
+    return key_id, key_secret
+
+
 def is_razorpay_configured():
-    return bool(getattr(config, 'RAZORPAY_KEY_ID', '') and getattr(config, 'RAZORPAY_KEY_SECRET', ''))
+    key_id, key_secret = get_razorpay_keys()
+    return bool(key_id and key_secret)
+
 
 def get_razorpay_client():
-    return razorpay.Client(auth=(config.RAZORPAY_KEY_ID, config.RAZORPAY_KEY_SECRET))
+    key_id, key_secret = get_razorpay_keys()
+    return razorpay.Client(auth=(key_id, key_secret))
 
 
 # ==============================================================================
@@ -59,17 +84,16 @@ def get_razorpay_client():
 def home():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
-    # Fetch featured items for storefront preview
+
     cursor.execute("SELECT * FROM products WHERE is_featured = 1 ORDER BY product_id DESC LIMIT 8")
     featured_products = cursor.fetchall()
-    
+
     cursor.execute("SELECT COUNT(*) AS total_items FROM products")
     total_products = cursor.fetchone()['total_items']
-    
+
     cursor.close()
     conn.close()
-    
+
     return render_template(
         "index.html",
         featured_products=featured_products,
@@ -106,11 +130,10 @@ def admin_signup():
     otp = random.randint(100000, 999999)
     session['otp'] = otp
 
-    # Try sending OTP email
     try:
         message = Message(
             subject="SmartCart Admin OTP Verification",
-            sender=config.MAIL_USERNAME,
+            sender=app.config['MAIL_USERNAME'],
             recipients=[email]
         )
         message.body = f"Hello {name},\n\nYour OTP for SmartCart Admin Registration is: {otp}\n\nThis OTP is valid for 10 minutes."
@@ -874,12 +897,13 @@ def user_checkout():
             app.logger.warning("Razorpay order creation fallback: %s", str(e))
 
     session['razorpay_order_id'] = order_dict['id']
+    razorpay_key_id, _ = get_razorpay_keys()
 
     return render_template(
         'user/checkout.html',
         order=order_dict,
         amount=amount_paise,
-        razorpay_key_id=config.RAZORPAY_KEY_ID,
+        razorpay_key_id=razorpay_key_id,
         user_name=session.get('user_name', ''),
         user_email=session.get('user_email', '')
     )
@@ -913,11 +937,12 @@ def user_pay():
             app.logger.warning("Razorpay client fallback: %s", str(e))
 
     session['razorpay_order_id'] = order_id
+    razorpay_key_id, _ = get_razorpay_keys()
 
     return render_template(
         "user/payment.html",
         amount=total_amount,
-        key_id=config.RAZORPAY_KEY_ID,
+        key_id=razorpay_key_id,
         order_id=order_id
     )
 
@@ -938,13 +963,14 @@ def verify_payment():
         'razorpay_signature': razorpay_signature
     }
 
-    # Verify signature if live signature is passed and not in demo simulation mode
+    razorpay_key_id, _ = get_razorpay_keys()
+
     if razorpay_signature != 'demo_test_signature' and not razorpay_payment_id.startswith('pay_demo_'):
         try:
             get_razorpay_client().utility.verify_payment_signature(payload)
         except Exception as e:
             app.logger.warning("Razorpay verification warning: %s", str(e))
-            if not getattr(config, 'RAZORPAY_KEY_ID', '').startswith('rzp_test_'):
+            if not razorpay_key_id.startswith('rzp_test_'):
                 flash("Payment verification failed. Please contact support.", "danger")
                 return redirect('/user/cart')
 
@@ -1083,11 +1109,12 @@ def download_invoice(order_id):
         return redirect('/user/my-orders')
 
     html = render_template("user/invoice.html", order=order, items=items)
-    pdf = generate_pdf(html)
+    if not generate_pdf:
+        return html
 
+    pdf = generate_pdf(html)
     if not pdf:
-        flash("Error generating PDF invoice.", "danger")
-        return redirect('/user/my-orders')
+        return html
 
     response = make_response(pdf.getvalue())
     response.headers['Content-Type'] = 'application/pdf'
